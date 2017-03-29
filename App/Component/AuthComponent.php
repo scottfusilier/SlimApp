@@ -120,38 +120,19 @@ class AuthComponent extends Component
 /*
  * Hash a field
  */
-    public function generateHash($value, $salt)
+    public function generateHash($value)
     {
-        // This hashes the password with the salt so that it can be stored securely
-        // in your database.  The output of this next statement is a 64 byte hex
-        // string representing the 32 byte sha256 hash of the password.  The original
-        // password cannot be recovered from the hash.  For more information:
-        // http://en.wikipedia.org/wiki/Cryptographic_hash_function
-        $hash = hash('sha256', $value.$salt);
+        $options = [
+            'cost' => 12
+        ];
 
-        // Next we hash the hash value 65536 more times.  The purpose of this is to
-        // protect against brute force attacks.  Now an attacker must compute the hash 65537
-        // times for each guess they make against a password, whereas if the password
-        // were hashed only once the attacker would have been able to make 65537 different
-        // guesses in the same amount of time instead of only one.
-        for ($round = 0; $round < 65536; $round++) {
-            $hash = hash('sha256', $hash.$salt);
-        }
-
-        return $hash;
+        return password_hash($value, PASSWORD_BCRYPT, $options);
     }
 
     public function generateSalt()
     {
-        // A salt is randomly generated here to protect again brute force attacks
-        // and rainbow table attacks.  The following statement generates a hex
-        // representation of an 8 byte salt.  Representing this in hex provides
-        // no additional security, but makes it easier for humans to read.
-        // For more information:
-        // http://en.wikipedia.org/wiki/Salt_%28cryptography%29
-        // http://en.wikipedia.org/wiki/Brute-force_attack
-        // http://en.wikipedia.org/wiki/Rainbow_table
-        return dechex(mt_rand(0, 2147483647)).dechex(mt_rand(0, 2147483647));
+        // do not use, allow password_hash to create salt
+        return null;
     }
 
 /*
@@ -163,15 +144,16 @@ class AuthComponent extends Component
             return false;
         }
 
-        $salt = $this->generateSalt();
-        $password = $this->generateHash($args['password'], $salt);
+        $password = $this->generateHash($args['password']);
+        if (!$password) {
+            throw new \Exception('password failure');
+        }
 
         $User = User::get();
         $User->UserEmail = $args['email'];
         $User->FirstName = $args['firstname'];
         $User->LastName = $args['lastname'];
         $User->Password = $password;
-        $User->Salt = $salt;
 
         return $User->save();
     }
@@ -196,14 +178,7 @@ class AuthComponent extends Component
         // get user from User data Model
         $User = User::get()->fetchByField('UserEmail', $args['email']);
         if ($User) {
-            // Using the password submitted by the user and the salt stored in the database,
-            // we now check to see whether the passwords match by hashing the submitted password
-            // and comparing it to the hashed version already stored in the database.
-            $check_password = $this->generateHash($args['password'],$User->Salt);
-
-            if ($check_password === $User->Password) {
-                $login_ok = true;
-            }
+            $login_ok = password_verify($args['password'],$User->Password);
         }
 
         if ($login_ok) {

@@ -8,7 +8,7 @@ class BasicController extends AppController
 {
     public function index($request, $response, $args)
     {
-        $params = array_merge($args,$request->getParams());
+        $params = array_merge($request->getParams(),$args);
 
         return $response->getBody()->write(
             Template::get()->render(
@@ -21,9 +21,9 @@ class BasicController extends AppController
 
     public function secret($request, $response, $args)
     {
-        return $response->getbody()->write(
-            template::get()->render(
-                view\basicview::get()->setvars([
+        return $response->getBody()->write(
+            Template::get()->render(
+                View\BasicView::get()->setVars([
                     'data' => json_encode(['secret'=>'oats'])
                 ])
             )

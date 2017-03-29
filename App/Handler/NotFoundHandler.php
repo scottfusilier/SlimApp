@@ -40,8 +40,6 @@ class NotFoundHandler extends \Slim\Handlers\NotFound
      */
     protected function renderHtmlNotFoundOutput(ServerRequestInterface $request)
     {
-        ob_start();
-        Template::get()->render(FourOhFour::get());
-        return ob_get_clean();
+        return Template::get()->render(FourOhFour::get());
     }
 }
