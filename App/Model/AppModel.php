@@ -1,9 +1,9 @@
 <?php
 namespace App\Model;
 
-use Data\Model\SqlModel;
+use Data\Model\MySqlModel;
 
-abstract class AppModel extends SqlModel
+abstract class AppModel extends MySqlModel
 {
     public function setup()
     {
